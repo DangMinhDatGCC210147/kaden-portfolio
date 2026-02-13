@@ -1,6 +1,6 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
-import { LegendProps } from "recharts"
+// import { LegendProps } from "recharts"
 
 import { cn } from "./utils"
 
