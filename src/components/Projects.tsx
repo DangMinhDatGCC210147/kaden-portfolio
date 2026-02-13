@@ -1,17 +1,43 @@
 import { useState, useRef } from 'react';
-import { ExternalLink, X, Briefcase, User, TrendingUp, Target, Lightbulb, Settings } from 'lucide-react';
-import { useScrollProgress } from '../hooks/useParallax';
+import {
+  X,
+  Briefcase,
+  User,
+  TrendingUp,
+  Target,
+  Lightbulb,
+  Settings,
+} from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
 type ProjectCategory = 'all' | 'work' | 'personal';
+type ProjectCategoryItem = Exclude<ProjectCategory, 'all'>; // 'work' | 'personal'
 
-const projects = [
+type Project = {
+  name: string;
+  category: ProjectCategoryItem;
+  industry: string;
+  role: string;
+  image: string;
+  color: string;
+  problem: string;
+  goal: string;
+  approach: string[];
+  tools: string[];
+  outcome: {
+    metrics: string[];
+    learnings: string;
+  };
+};
+
+const projects: Project[] = [
   {
     name: 'Vstep Trial Testing System',
-    category: 'personal' as const,
+    category: 'personal',
     industry: 'Education Technology',
     role: 'Business Analyst & UI/UX Designer',
-    image: 'https://images.unsplash.com/photo-1704881986205-ee7cb7688f3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdsaXNoJTIwbGFuZ3VhZ2UlMjB0ZXN0JTIwZXhhbSUyMGNlcnRpZmljYXRpb258ZW58MXx8fHwxNzcwMTA2MjQ2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    image:
+      'https://images.unsplash.com/photo-1704881986205-ee7cb7688f3b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlbmdsaXNoJTIwbGFuZ3VhZ2UlMjB0ZXN0JTIwZXhhbSUyMGNlcnRpZmljYXRpb258ZW58MXx8fHwxNzcwMTA2MjQ2fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     color: 'var(--retro-teal)',
     problem:
       'Students and lecturers needed a streamlined system for conducting Vstep trial tests with real-time results and proper user role management.',
@@ -23,7 +49,15 @@ const projects = [
       'Implemented new features based on user feedback, improving accessibility for over 200 students',
       'Leveraged Bootstrap 4 and Tailwind for UI/UX design, enhancing usability and visual appeal',
     ],
-    tools: ['PHP', 'Laravel Framework', 'JavaScript', 'MySQL', 'Bootstrap 4', 'Tailwind CSS', 'Figma'],
+    tools: [
+      'PHP',
+      'Laravel Framework',
+      'JavaScript',
+      'MySQL',
+      'Bootstrap 4',
+      'Tailwind CSS',
+      'Figma',
+    ],
     outcome: {
       metrics: [
         'Successfully onboarded 200+ students',
@@ -36,10 +70,11 @@ const projects = [
   },
   {
     name: 'Academic Management System',
-    category: 'personal' as const,
+    category: 'personal',
     industry: 'Education Technology',
     role: 'Scrum Master, Project Manager, Tester & Developer',
-    image: 'https://images.unsplash.com/photo-1722299547714-697e1c92ed41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhY2FkZW1pYyUyMHVuaXZlcnNpdHklMjBtYW5hZ2VtZW50JTIwZWR1Y2F0aW9ufGVufDF8fHx8MTc3MDEwNTY0Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
+    image:
+      'https://images.unsplash.com/photo-1722299547714-697e1c92ed41?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhY2FkZW1pYyUyMHVuaXZlcnNpdHklMjBtYW5hZ2VtZW50JTIwZWR1Y2F0aW9ufGVufDF8fHx8MTc3MDEwNTY0Mnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     color: 'var(--retro-blue)',
     problem:
       'Managing academic exams and quizzes required a comprehensive system with proper role management and reporting capabilities.',
@@ -52,7 +87,14 @@ const projects = [
       'Ensured seamless scrum meetings capturing audience content accessibility and system usability',
       'Improved team efficiency and collaboration by implementing Scrum methodologies',
     ],
-    tools: ['C#', 'ASP.NET Core', 'SQL Server', 'Azure DevOps', 'Scrum/Agile', 'Visual Studio'],
+    tools: [
+      'C#',
+      'ASP.NET Core',
+      'SQL Server',
+      'Azure DevOps',
+      'Scrum/Agile',
+      'Visual Studio',
+    ],
     outcome: {
       metrics: [
         'Successfully delivered full CRUD functionality',
@@ -68,7 +110,9 @@ const projects = [
 export function Projects() {
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<ProjectCategory>('all');
-  const sectionRef = useRef<HTMLElement>(null);
+
+  // IMPORTANT: ref can be null on first render
+  const sectionRef = useRef<HTMLElement | null>(null);
   const isVisible = useScrollReveal(sectionRef, { threshold: 0.15 });
 
   const filteredProjects = projects.filter((project) => {
@@ -76,11 +120,12 @@ export function Projects() {
     return project.category === activeFilter;
   });
 
-  const filters: { value: ProjectCategory; label: string; icon: typeof Briefcase }[] = [
-    { value: 'all', label: 'All Projects', icon: TrendingUp },
-    { value: 'work', label: 'Work Projects', icon: Briefcase },
-    { value: 'personal', label: 'Personal Projects', icon: User },
-  ];
+  const filters: { value: ProjectCategory; label: string; icon: typeof Briefcase }[] =
+    [
+      { value: 'all', label: 'All Projects', icon: TrendingUp },
+      { value: 'work', label: 'Work Projects', icon: Briefcase },
+      { value: 'personal', label: 'Personal Projects', icon: User },
+    ];
 
   return (
     <section
@@ -120,7 +165,7 @@ export function Projects() {
           {filters.map((filter) => {
             const Icon = filter.icon;
             const isActive = activeFilter === filter.value;
-            
+
             return (
               <button
                 key={filter.value}
@@ -129,8 +174,12 @@ export function Projects() {
                 style={{
                   backgroundColor: isActive ? 'var(--retro-blue)' : 'white',
                   color: isActive ? 'white' : 'var(--retro-text)',
-                  border: `1px solid ${isActive ? 'var(--retro-blue)' : 'var(--border)'}`,
-                  boxShadow: isActive ? '0 4px 12px rgba(91, 143, 163, 0.25)' : 'none',
+                  border: `1px solid ${
+                    isActive ? 'var(--retro-blue)' : 'var(--border)'
+                  }`,
+                  boxShadow: isActive
+                    ? '0 4px 12px rgba(91, 143, 163, 0.25)'
+                    : 'none',
                 }}
               >
                 <Icon size={18} />
@@ -138,13 +187,15 @@ export function Projects() {
                 <span
                   className="text-xs px-2 py-0.5 rounded-full"
                   style={{
-                    backgroundColor: isActive ? 'rgba(255, 255, 255, 0.2)' : 'var(--retro-warm-gray)',
+                    backgroundColor: isActive
+                      ? 'rgba(255, 255, 255, 0.2)'
+                      : 'var(--retro-warm-gray)',
                     color: isActive ? 'white' : 'var(--retro-text-light)',
                   }}
                 >
-                  {filter.value === 'all' 
-                    ? projects.length 
-                    : projects.filter(p => p.category === filter.value).length}
+                  {filter.value === 'all'
+                    ? projects.length
+                    : projects.filter((p) => p.category === filter.value).length}
                 </span>
               </button>
             );
@@ -153,9 +204,11 @@ export function Projects() {
 
         {/* Project Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProjects.map((project, index) => {
-            const originalIndex = projects.findIndex(p => p.name === project.name);
-            
+          {filteredProjects.map((project) => {
+            const originalIndex = projects.findIndex(
+              (p) => p.name === project.name
+            );
+
             return (
               <button
                 key={originalIndex}
@@ -217,7 +270,10 @@ export function Projects() {
                     {project.name}
                   </h3>
 
-                  <p className="text-sm" style={{ color: 'var(--retro-text-light)' }}>
+                  <p
+                    className="text-sm"
+                    style={{ color: 'var(--retro-text-light)' }}
+                  >
                     Role: {project.role}
                   </p>
 
@@ -312,7 +368,10 @@ export function Projects() {
                   >
                     {projects[selectedProject].name}
                   </h3>
-                  <p className="text-lg" style={{ color: 'var(--retro-text-light)' }}>
+                  <p
+                    className="text-lg"
+                    style={{ color: 'var(--retro-text-light)' }}
+                  >
                     Role: {projects[selectedProject].role}
                   </p>
                 </div>
@@ -324,13 +383,19 @@ export function Projects() {
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: 'var(--retro-warm-gray)' }}
                     >
-                      <Target size={18} style={{ color: projects[selectedProject].color }} />
+                      <Target
+                        size={18}
+                        style={{ color: projects[selectedProject].color }}
+                      />
                     </div>
                     <h4 className="text-lg" style={{ color: 'var(--retro-text)' }}>
                       Problem Statement
                     </h4>
                   </div>
-                  <p className="leading-relaxed pl-10" style={{ color: 'var(--retro-text-light)' }}>
+                  <p
+                    className="leading-relaxed pl-10"
+                    style={{ color: 'var(--retro-text-light)' }}
+                  >
                     {projects[selectedProject].problem}
                   </p>
                 </div>
@@ -342,13 +407,19 @@ export function Projects() {
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: 'var(--retro-warm-gray)' }}
                     >
-                      <Lightbulb size={18} style={{ color: projects[selectedProject].color }} />
+                      <Lightbulb
+                        size={18}
+                        style={{ color: projects[selectedProject].color }}
+                      />
                     </div>
                     <h4 className="text-lg" style={{ color: 'var(--retro-text)' }}>
                       Business Goal
                     </h4>
                   </div>
-                  <p className="leading-relaxed pl-10" style={{ color: 'var(--retro-text-light)' }}>
+                  <p
+                    className="leading-relaxed pl-10"
+                    style={{ color: 'var(--retro-text-light)' }}
+                  >
                     {projects[selectedProject].goal}
                   </p>
                 </div>
@@ -360,7 +431,10 @@ export function Projects() {
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: 'var(--retro-warm-gray)' }}
                     >
-                      <Settings size={18} style={{ color: projects[selectedProject].color }} />
+                      <Settings
+                        size={18}
+                        style={{ color: projects[selectedProject].color }}
+                      />
                     </div>
                     <h4 className="text-lg" style={{ color: 'var(--retro-text)' }}>
                       BA Approach
@@ -405,13 +479,19 @@ export function Projects() {
                 </div>
 
                 {/* Outcome */}
-                <div className="space-y-4 p-6 rounded-2xl" style={{ backgroundColor: 'var(--retro-beige)' }}>
+                <div
+                  className="space-y-4 p-6 rounded-2xl"
+                  style={{ backgroundColor: 'var(--retro-beige)' }}
+                >
                   <div className="flex items-center gap-2">
                     <div
                       className="w-8 h-8 rounded-lg flex items-center justify-center"
                       style={{ backgroundColor: 'white' }}
                     >
-                      <TrendingUp size={18} style={{ color: projects[selectedProject].color }} />
+                      <TrendingUp
+                        size={18}
+                        style={{ color: projects[selectedProject].color }}
+                      />
                     </div>
                     <h4 className="text-lg" style={{ color: 'var(--retro-text)' }}>
                       Solution & Outcome
@@ -441,7 +521,10 @@ export function Projects() {
                     <p className="mb-2" style={{ color: 'var(--retro-text)' }}>
                       Key Learnings:
                     </p>
-                    <p className="leading-relaxed italic" style={{ color: 'var(--retro-text-light)' }}>
+                    <p
+                      className="leading-relaxed italic"
+                      style={{ color: 'var(--retro-text-light)' }}
+                    >
                       "{projects[selectedProject].outcome.learnings}"
                     </p>
                   </div>
