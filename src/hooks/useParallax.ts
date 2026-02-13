@@ -1,27 +1,48 @@
-import { useEffect, useState } from 'react';
-import type { RefObject } from 'react';
+import { useEffect, useState } from "react";
+import type { RefObject } from "react";
+import { useDisableMotion } from "./useDisableMotion";
 
 export function useParallax(speed: number = 0.5) {
+  const disableMotion = useDisableMotion(768);
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
+    if (disableMotion) return;
+
+    let raf = 0;
+
     const handleScroll = () => {
-      setOffset(window.pageYOffset);
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.pageYOffset || 0;
+        // ✅ tránh re-render nếu không đổi
+        setOffset((prev) => (prev === y ? prev : y));
+      });
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // initial
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
 
-  return offset * speed;
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [disableMotion]);
+
+  // ✅ không cần reset state; chỉ override giá trị trả về
+  return disableMotion ? 0 : offset * speed;
 }
 
 export function useScrollProgress(ref: RefObject<HTMLElement | null>) {
+  const disableMotion = useDisableMotion(768);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
+    if (disableMotion) return;
+
+    let raf = 0;
+
+    const compute = () => {
       const element = ref.current;
       if (!element) return;
 
@@ -30,22 +51,32 @@ export function useScrollProgress(ref: RefObject<HTMLElement | null>) {
       const elementHeight = rect.height;
       const windowHeight = window.innerHeight;
 
-      // 0 when element just enters viewport from bottom, 1 when it leaves at top
       const start = windowHeight;
       const end = -elementHeight;
       const total = start - end;
 
       const current = elementTop - end;
-      const scrollProgress = 1 - Math.max(0, Math.min(1, current / total));
+      const p = 1 - Math.max(0, Math.min(1, current / total));
 
-      setProgress(scrollProgress);
+      setProgress((prev) => (prev === p ? prev : p));
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial calculation
+    const handleScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(compute);
+    };
 
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [ref]);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+    handleScroll();
 
-  return progress;
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [ref, disableMotion]);
+
+  // ✅ override output trên mobile/reduce-motion, không cần setState trong effect
+  return disableMotion ? 1 : progress; // bạn có thể đổi 1 thành 0 nếu hợp UI
 }
